@@ -6,15 +6,8 @@
 
 #include <iostream>
 #include <vector>
-#include <limits>
-#include <cstdlib>
-#include <cmath>
-#include <vector>
-#include <string>
-#include <algorithm> // Para sort
-#include <cstdlib>   // Para atof
-#include <cstdio>
 #include <cfloat>
+#include <algorithm>
 
 using namespace std;
 
@@ -24,32 +17,27 @@ struct Point {
     Point() : x(0), y(0) {}
     Point(double x, double y) : x(x), y(y) {}
 
-    // Overload equality operator
     bool operator==(const Point& other) const {
         return x == other.x && y == other.y;
     }
 
-    // Overload subtraction operator to compute vector between two points
     Point operator-(const Point& other) const {
         return Point(x - other.x, y - other.y);
     }
 };
 
-// Função para calcular a distância quadrada entre dois pontos
 double square_distance(const Point& p1, const Point& p2) {
     Point diff = p1 - p2;
     return diff.x * diff.x + diff.y * diff.y;
 }
 
-
 struct QuadNode {
     bool is_leaf;
-    Point pt;
-    int children[4]; // índices para os filhos
-    int capacity;
     vector<Point> points;
+    int children[4];
+    int capacity;
 
-    QuadNode() : is_leaf(true), capacity(1) {
+    QuadNode(int cap) : is_leaf(true), capacity(cap) {
         fill(begin(children), end(children), -1);
     }
 };
@@ -61,8 +49,32 @@ private:
     int node_capacity;
 
     int create_node() {
-        nodes.push_back(QuadNode());
+        nodes.push_back(QuadNode(node_capacity));
         return nodes.size() - 1;
+    }
+
+    Point calculate_center(const QuadNode& node) const {
+        double minX = DBL_MAX, minY = DBL_MAX;
+        double maxX = -DBL_MAX, maxY = -DBL_MAX;
+        for (const Point& pt : node.points) {
+            minX = min(minX, pt.x);
+            minY = min(minY, pt.y);
+            maxX = max(maxX, pt.x);
+            maxY = max(maxY, pt.y);
+        }
+        return Point((minX + maxX) / 2, (minY + maxY) / 2);
+    }
+
+    void subdivide(QuadNode& node) {
+        node.is_leaf = false;
+        for (const Point& pt : node.points) {
+            int quad = get_quadrant(pt, calculate_center(node));
+            if (node.children[quad] == -1) {
+                node.children[quad] = create_node();
+            }
+            insert(pt, node.children[quad]);
+        }
+        node.points.clear();
     }
 
 public:
@@ -70,7 +82,6 @@ public:
         root_idx = create_node();
     }
 
-    // Função para construir a árvore
     void insert(const Point& pt, int node_idx = 0) {
         QuadNode& node = nodes[node_idx];
 
@@ -78,26 +89,12 @@ public:
             if (node.points.size() < node.capacity) {
                 node.points.push_back(pt);
             } else {
-                // Dividir o nó e distribuir os pontos
-                node.is_leaf = false;
-                for (const Point& p : node.points) {
-                    // Distribuir os pontos existentes
-                    int quad = get_quadrant(p);
-                    if (node.children[quad] == -1) {
-                        node.children[quad] = create_node();
-                    }
-                    insert(p, node.children[quad]);
-                }
-                node.points.clear();
-                // Inserir o novo ponto
-                int quad = get_quadrant(pt);
-                if (node.children[quad] == -1) {
-                    node.children[quad] = create_node();
-                }
-                insert(pt, node.children[quad]);
+                subdivide(node);
+                insert(pt, node_idx);  // Reinserir o ponto após a subdivisão
             }
         } else {
-            int quad = get_quadrant(pt);
+            Point center = calculate_center(node);
+            int quad = get_quadrant(pt, center);
             if (node.children[quad] == -1) {
                 node.children[quad] = create_node();
             }
@@ -105,15 +102,19 @@ public:
         }
     }
 
-    int get_quadrant(const Point& pt) {
-        // Implementar lógica para determinar o quadrante de um ponto
-        // baseado no centro da bounding box ou do nó atual.
-        // Retorna um valor entre 0 e 3, correspondendo ao quadrante.
+    int get_quadrant(const Point& pt, const Point& center) const {
+        if (pt.x >= center.x && pt.y >= center.y)
+            return 0; // Quadrante superior direito
+        else if (pt.x < center.x && pt.y >= center.y)
+            return 1; // Quadrante superior esquerdo
+        else if (pt.x < center.x && pt.y < center.y)
+            return 2; // Quadrante inferior esquerdo
+        else
+            return 3; // Quadrante inferior direito
     }
 
-    // Função para consultar o ponto mais próximo (distância mínima)
-    double nearest(const Point& p, int node_idx = 0) {
-        QuadNode& node = nodes[node_idx];
+    double nearest(const Point& p, int node_idx = 0) const {
+        const QuadNode& node = nodes[node_idx];
 
         if (node.is_leaf) {
             double min_dist = DBL_MAX;
@@ -133,11 +134,45 @@ public:
         }
     }
 
-    // Função para ativar/desativar pontos de recarga
     void update_status(const Point& pt, bool active) {
-        // Implementar lógica para ativar/desativar o ponto
-        // Pode envolver a remoção do ponto da árvore ou
-        // a marcação do status em uma estrutura associada.
+        if (active) {
+            insert(pt);
+        } else {
+            remove(pt);
+        }
+    }
+
+    void remove(const Point& pt, int node_idx = 0) {
+        QuadNode& node = nodes[node_idx];
+
+        if (node.is_leaf) {
+            auto it = find(node.points.begin(), node.points.end(), pt);
+            if (it != node.points.end()) {
+                node.points.erase(it);
+            }
+        } else {
+            Point center = calculate_center(node);
+            int quad = get_quadrant(pt, center);
+            if (node.children[quad] != -1) {
+                remove(pt, node.children[quad]);
+            }
+        }
     }
 };
 
+int main() {
+    QuadTree qt(10); // Capacidade do nó: 2 pontos
+
+    qt.insert(Point(5, 5));
+    qt.insert(Point(10, 10));
+    qt.insert(Point(15, 15));
+    qt.insert(Point(20, 20));
+
+    cout << "Nearest distance to (12,12): " << qt.nearest(Point(12, 12)) << endl;
+
+    qt.update_status(Point(10, 10), false); // Desativa o ponto (15, 15)
+
+    cout << "Nearest distance to (12,12) after deactivation: " << qt.nearest(Point(12, 12)) << endl;
+
+    return 0;
+}
