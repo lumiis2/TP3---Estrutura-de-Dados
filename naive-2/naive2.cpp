@@ -100,7 +100,7 @@ void printrecharge(int pos) {
          << rechargevet[pos].numero_imo << ", "
          << rechargevet[pos].nome_bairr << ", "
          << rechargevet[pos].nome_regio << ", "
-         << rechargevet[pos].cep << endl;
+         << rechargevet[pos].cep;
 }
 
 // Função para ativar um ponto de recarga
