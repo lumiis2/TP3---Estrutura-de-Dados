@@ -16,7 +16,7 @@ public:
     /**
      * @brief Construtor padrão que inicializa o par com valores padrão.
      */
-    Pair();
+    Pair() : first(T1()), second(T2()) {}
 
     /**
      * @brief Construtor que inicializa o par com valores especificados.
@@ -24,7 +24,7 @@ public:
      * @param first Primeiro valor do par.
      * @param second Segundo valor do par.
      */
-    Pair(const T1 first, const T2 second) : first(first), second(second) {}
+    Pair(const T1& first, const T2& second) : first(first), second(second) {}
 
     /**
      * @brief Operador de comparação menor que.

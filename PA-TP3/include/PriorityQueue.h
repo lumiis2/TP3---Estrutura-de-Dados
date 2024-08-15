@@ -45,7 +45,6 @@ template <typename T, typename Compare = Min<T>>
 class PriorityQueue {
 private:
     T *heap; ///< Array que representa o heap.
-    int size; ///< Tamanho atual do heap.
     const int MAX_SIZE = 1010; ///< Tamanho máximo do heap.
     Compare comp; ///< Objeto de comparação.
 
@@ -94,6 +93,8 @@ private:
     int getRightChild(int idx) const;
 
 public:
+    int size; ///< Tamanho atual do heap.
+
     /**
      * @brief Constrói um novo objeto PriorityQueue.
      */
