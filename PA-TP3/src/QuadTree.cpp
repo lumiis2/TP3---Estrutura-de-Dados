@@ -1,123 +1,154 @@
 #include "QuadTree.h"
 #include <cmath>
+#include <stdexcept> // Para std::runtime_error
 
 // Construtor padrão
 QuadTree::QuadTree() : tree(new Qnode[MAX]), next(1) {
-    Box defaultBox; // Supondo que Box tem um construtor padrão
-    tree[root] = Qnode(defaultBox);
+    Box defaultBox; // Cria um Box com valores padrão
+    tree[root] = Qnode(defaultBox); // Inicializa a raiz com o Box padrão
 }
 
 // Construtor com limites específicos
 QuadTree::QuadTree(Box box) : tree(new Qnode[MAX]), next(1) {
-    tree[root] = Qnode(box);
+    tree[root] = Qnode(box); // Inicializa a raiz com o Box fornecido
 }
 
 // Destrutor
 QuadTree::~QuadTree() {
-    delete[] tree;
+    delete[] tree; // Libera a memória alocada para a quadtree
 }
 
 // Encontra o quadrante que contém o ponto
 T QuadTree::find(Point p) {
-    T quad = root;
-    while (tree[quad].nw != -1) {
-        if (tree[tree[quad].ne].limites.contains(p))
-            quad = tree[quad].ne;
-        else if (tree[tree[quad].nw].limites.contains(p))
-            quad = tree[quad].nw;
-        else if (tree[tree[quad].sw].limites.contains(p))
-            quad = tree[quad].sw;
-        else if (tree[tree[quad].se].limites.contains(p))
-            quad = tree[quad].se;
+    T node = root;
+    while (node != -1 && tree[node].nw != -1) { // Continua enquanto há filhos
+        if (tree[tree[node].ne].limites.contains(p))
+            node = tree[node].ne; // Vai para o noroeste
+        else if (tree[tree[node].nw].limites.contains(p))
+            node = tree[node].nw; // Vai para o nordeste
+        else if (tree[tree[node].sw].limites.contains(p))
+            node = tree[node].sw; // Vai para o sudoeste
+        else if (tree[tree[node].se].limites.contains(p))
+            node = tree[node].se; // Vai para o sudeste
+        else
+            throw std::runtime_error("Ponto não encontrado na quadtree.");
     }
-    return quad;
+    return node; // Retorna o índice do quadrante que contém o ponto
 }
 
 // Encontra o quadrante que contém o endereço
-T QuadTree::find(Addr s) {
-    T quad = root;
-    while (tree[quad].ne != -1 && tree[quad].station.idend != s.idend) {
-        if (tree[tree[quad].ne].limites.contains(s.coordenadas))
-            quad = tree[quad].ne;
-        else if (tree[tree[quad].nw].limites.contains(s.coordenadas))
-            quad = tree[quad].nw;
-        else if (tree[tree[quad].sw].limites.contains(s.coordenadas))
-            quad = tree[quad].sw;
-        else if (tree[tree[quad].se].limites.contains(s.coordenadas))
-            quad = tree[quad].se;
+T QuadTree::find(Addr st) {
+    T node = root;
+    while (node != -1 && tree[node].ne != -1 && tree[node].station.idend != st.idend) { // Continua enquanto há filhos e o endereço não é encontrado
+        if (tree[tree[node].ne].limites.contains(st.coordenadas))
+            node = tree[node].ne; // Vai para o noroeste
+        else if (tree[tree[node].nw].limites.contains(st.coordenadas))
+            node = tree[node].nw; // Vai para o nordeste
+        else if (tree[tree[node].sw].limites.contains(st.coordenadas))
+            node = tree[node].sw; // Vai para o sudoeste
+        else if (tree[tree[node].se].limites.contains(st.coordenadas))
+            node = tree[node].se; // Vai para o sudeste
+        else
+            throw std::runtime_error("Endereço não encontrado na quadtree.");
     }
-    return quad;
+    if (node == -1 || tree[node].station.idend != st.idend) {
+        throw std::runtime_error("Endereço não encontrado na quadtree.");
+    }
+    return node; // Retorna o índice do quadrante que contém o endereço
 }
 
 // Insere um endereço na quadtree
-void QuadTree::insert(Addr s) {
-    T quad = find(s.coordenadas);
-    tree[quad].station = s;
+void QuadTree::insert(Addr st) {
+    if (next >= MAX) {
+        throw std::runtime_error("Quadtree está cheia. Não é possível inserir mais elementos.");
+    }
+
+    T node = find(st.coordenadas); // Encontra o quadrante que deve conter o endereço
+    tree[node].station = st; // Insere o endereço no nó encontrado
 
     // Subdivide o quadrante e cria novos filhos
-    tree[quad].ne = next;
-    tree[next++] = Box(Point(s.coordenadas.x, tree[quad].limites.topLeft.y), 
-                             Point(tree[quad].limites.bottomRight.x, s.coordenadas.y)); 
-    
-    tree[quad].nw = next;
-    tree[next++] = Box(tree[quad].limites.topLeft, s.coordenadas); 
-    
-    tree[quad].sw = next;
-    tree[next++] = Box(Point(tree[quad].limites.topLeft.x, s.coordenadas.y), 
-                             Point(s.coordenadas.x, tree[quad].limites.bottomRight.y));
+    tree[node].ne = next;
+    if (next < MAX) {
+        tree[next++] = Qnode(Box(Point(st.coordenadas.x, tree[node].limites.topLeft.y), 
+                                 Point(tree[node].limites.bottomRight.x, st.coordenadas.y)));
+    } else {
+        throw std::runtime_error("Quadtree está cheia. Não é possível criar novos nós.");
+    }
 
-    tree[quad].se = next;
-    tree[next++] = Box(s.coordenadas, tree[quad].limites.bottomRight); 
+    tree[node].nw = next;
+    if (next < MAX) {
+        tree[next++] = Qnode(Box(tree[node].limites.topLeft, st.coordenadas));
+    } else {
+        throw std::runtime_error("Quadtree está cheia. Não é possível criar novos nós.");
+    }
+
+    tree[node].sw = next;
+    if (next < MAX) {
+        tree[next++] = Qnode(Box(Point(tree[node].limites.topLeft.x, st.coordenadas.y), 
+                                 Point(st.coordenadas.x, tree[node].limites.bottomRight.y)));
+    } else {
+        throw std::runtime_error("Quadtree está cheia. Não é possível criar novos nós.");
+    }
+
+    tree[node].se = next;
+    if (next < MAX) {
+        tree[next++] = Qnode(Box(st.coordenadas, tree[node].limites.bottomRight));
+    } else {
+        throw std::runtime_error("Quadtree está cheia. Não é possível criar novos nós.");
+    }
 }
 
 // Função recursiva para encontrar k vizinhos mais próximos
-void QuadTree::KNNRecursive(PriorityQueue<Pair<double, Addr>>& pq, T quad, Point p, int k) {
-    if (quad == -1) return; // Verifica se o quadrante é inválido
+void QuadTree::KNNRecursive(PriorityQueue<Pair<double, Addr>>& pq, T node, Point p, int k) {
+    if (node == -1) return; // Verifica se o quadrante é inválido
 
-    double distance = p.euclideanDistance(tree[quad].station.coordenadas);
-    
-    if (tree[quad].station.ativo) {
+    double distance = p.euclideanDistance(tree[node].station.coordenadas); // Calcula a distância euclidiana
+
+    if (tree[node].station.ativo) { // Verifica se o endereço está ativo
         if (pq.size < k) {
-            pq.insert(Pair<double, Addr>(distance, tree[quad].station));
+            pq.insert(Pair<double, Addr>(distance, tree[node].station)); // Adiciona no pq se não houver k elementos ainda
         } else if (distance < pq.top().first) {
-            pq.remove();
-            pq.insert(Pair<double, Addr>(distance, tree[quad].station));
+            pq.remove(); // Remove o elemento com maior distância
+            pq.insert(Pair<double, Addr>(distance, tree[node].station)); // Adiciona o novo elemento
         }
     }
     
-    // Recorre nos quadrantes filhos
-    KNNRecursive(pq, tree[quad].ne, p, k);
-    KNNRecursive(pq, tree[quad].nw, p, k);
-    KNNRecursive(pq, tree[quad].sw, p, k);
-    KNNRecursive(pq, tree[quad].se, p, k);
+    // Recorre para os quadrantes filhos
+    KNNRecursive(pq, tree[node].ne, p, k);
+    KNNRecursive(pq, tree[node].nw, p, k);
+    KNNRecursive(pq, tree[node].sw, p, k);
+    KNNRecursive(pq, tree[node].se, p, k);
 }
- 
+
 // Retorna os k vizinhos mais próximos
 Pair<double, Addr>* QuadTree::KNN(Point p, int k) {
-    PriorityQueue<Pair<double, Addr>> pq;
-    KNNRecursive(pq, root, p, k);
+    if (k <= 0) {
+        throw std::invalid_argument("O valor de k deve ser maior que 0.");
+    }
+    PriorityQueue<Pair<double, Addr>> pq; // Cria uma fila de prioridade para armazenar os vizinhos mais próximos
+    KNNRecursive(pq, root, p, k); // Preenche a fila de prioridade com os k vizinhos mais próximos
 
-    Pair<double, Addr>* val = new Pair<double, Addr>[k];
+    Pair<double, Addr>* val = new Pair<double, Addr>[k]; // Aloca memória para os k vizinhos
     int i = k - 1;
-    while (!pq.empty()) {
+    while (!pq.empty()) { // Remove os elementos da fila de prioridade e os armazena no array
         val[i--] = pq.top();
         pq.remove();
     }
-    return val;
+    return val; // Retorna o array com os k vizinhos mais próximos
 }
 
 // Ativa um endereço e retorna o estado anterior
-bool QuadTree::activate(Addr s) {
-    T quad = find(s);
-    bool was = tree[quad].station.ativo;
-    tree[quad].station.ativo = true;
-    return was;
+bool QuadTree::activate(Addr st) {
+    T node = find(st); // Encontra o nó que contém o endereço
+    bool was = tree[node].station.ativo; // Salva o estado anterior
+    tree[node].station.ativo = true; // Ativa o endereço
+    return was; // Retorna o estado anterior
 }
 
 // Desativa um endereço e retorna o estado anterior
-bool QuadTree::inactivate(Addr s) {
-    T node = find(s);
-    bool was = !tree[node].station.ativo;
-    tree[node].station.ativo = false;
-    return was;
+bool QuadTree::inactivate(Addr st) {
+    T node = find(st); // Encontra o nó que contém o endereço
+    bool was = tree[node].station.ativo; // Salva o estado anterior
+    tree[node].station.ativo = false; // Desativa o endereço
+    return was; // Retorna o estado anterior
 }

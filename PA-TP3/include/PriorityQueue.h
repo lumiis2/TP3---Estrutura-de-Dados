@@ -9,7 +9,7 @@
 template <typename T>
 struct Min {
     /**
-     * @brief Operador de comparação para comparação de menor que.
+     * @brief Operador de comparação.
      * 
      * @param lhs Operando do lado esquerdo.
      * @param rhs Operando do lado direito.

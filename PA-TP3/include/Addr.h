@@ -20,6 +20,9 @@ struct Addr {
     Point coordenadas;        ///< Coordenadas (latitude e longitude)
     bool ativo;               ///< Status de atividade (ativo ou não)
 
+    /**
+     * @brief Construtor padrão que inicializa todos os membros da estrutura Addr.
+     */
     Addr() : idend(""), id_logrado(0), sigla_tipo(""), nome_logra(""), numero_imo(0),
              nome_bairr(""), nome_regio(""), cep(0), coordenadas(Point()), ativo(true) {}
 
@@ -41,4 +44,3 @@ struct Addr {
 };
 
 #endif  // ADDR_H
-
