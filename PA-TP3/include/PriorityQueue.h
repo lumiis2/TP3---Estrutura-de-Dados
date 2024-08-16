@@ -17,7 +17,7 @@ struct Min {
      * @return false caso contrário.
      */
     bool operator()(const T& lhs, const T& rhs) const {
-        return lhs < rhs;
+        return lhs > rhs;
     }
 };
 
@@ -28,12 +28,12 @@ struct Min {
  * @param a A primeira variável.
  * @param b A segunda variável.
  */
-template <typename T>
-void swap(T& a, T& b) {
-    T temp = a;
-    a = b;
-    b = temp;
-}
+// template <typename T>
+// void swap(T& a, T& b) {
+//     T temp = a;
+//     a = b;
+//     b = temp;
+// }
 
 /**
  * @brief Fila de prioridade genérica com funcionalidade de comparação personalizável.
@@ -184,7 +184,7 @@ T PriorityQueue<T, Compare>::top() const {
 template <typename T, typename Compare>
 void PriorityQueue<T, Compare>::heapify_up(int idx) {
     while (idx > 0 && comp(heap[idx], heap[getParent(idx)])) {
-        swap(heap[idx], heap[getParent(idx)]);
+        std::swap(heap[idx], heap[getParent(idx)]);
         idx = getParent(idx);
     }
 }
@@ -203,7 +203,7 @@ void PriorityQueue<T, Compare>::heapify_down(int idx) {
         largest = right;
     }
     if (largest != idx) {
-        swap(heap[idx], heap[largest]);
+        std::swap(heap[idx], heap[largest]);
         heapify_down(largest);
     }
 }
@@ -227,8 +227,9 @@ int PriorityQueue<T, Compare>::getRightChild(int idx) const {
 }
 
 template <typename T, typename Compare>
-void realloc() {
-    size_t newCapacity = capacity * 2;
+void PriorityQueue<T, Compare>::realloc() {
+    std::cout << "entrou" << '\n';
+    size_t newCapacity = this->size * 2;
     T* aux = this->heap;
     this->heap = new T[newCapacity];
     

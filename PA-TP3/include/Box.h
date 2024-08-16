@@ -8,7 +8,7 @@ public:
     Point topLeft;
     Point bottomRight;
     
-    Box();
+    Box() = default;
     Box(Point tl, Point br) : topLeft(tl), bottomRight(br) {}
 
     bool contains(Point p) const {

@@ -18,8 +18,8 @@ public:
     Hash();                // Construtor
     ~Hash();               // Destruidor
 
-    void insert(const Addr& s);
-    Addr get(const std::string& station_idend) const;
+    void insert(Addr s);
+    Addr get(std::string station_idend);
 };
 
 #endif  // HASH_H

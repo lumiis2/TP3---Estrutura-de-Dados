@@ -4,16 +4,16 @@
 
 // Função de hash básica para strings
 long Hash::hash(std::string station_idend) const {
-    long hash = 0;
-    for (char c : station_idend) {
-        hash = (hash * 31 + c) % mod;
+    long ret = 0;
+    for(char & c : station_idend) {
+        ret += (long) c;
     }
-    return hash;
+    return (ret % this->mod);
 }
 
-Hash::Hash() : mod(MAX), table(new Addr[MAX]), occupied(new bool[MAX]()) {
+Hash::Hash() : table(new Addr[MAX]), occupied(new bool[MAX]()), mod(MAX)  {
     // Inicializa todas as posições do vetor occupied como falsas
-    std::fill_n(occupied, MAX, false);
+    std::fill_n(occupied, MAX, true);
 }
 
 Hash::~Hash() {
@@ -21,35 +21,32 @@ Hash::~Hash() {
     delete[] occupied;
 }
 
-void Hash::insert(const Addr& s) {
-    long index = hash(s.idend); // Supondo que Addr tem um método idend que retorna a ID como string
-    long startIndex = index;
+void Hash::insert(Addr s) {
+    long hash = this->hash(s.idend);
 
-    do {
-        if (!occupied[index]) {
-            table[index] = s;
-            occupied[index] = true;
-            return;
-        } else if (table[index].idend == s.idend) {
-            table[index] = s; // Atualiza a estação se a ID já existir
-            return;
+    long i = hash;
+    while(!this->occupied[i]) {
+        i = (i + 1) % this->mod;
+        if(i == hash) {
+            throw std::overflow_error("Capacidade máxima da tabela hash atingida.");
         }
-        index = (index + 1) % mod;
-    } while (index != startIndex);
+    }
 
-    throw std::runtime_error("Hash is full");
+    this->table[i] = s;
+    this->occupied[i] = false;
 }
 
-Addr Hash::get(const std::string& station_idend) const {
-    long index = hash(station_idend);
-    long startIndex = index;
+Addr Hash::get(std::string station_idend) {
+    long hash = this->hash(station_idend);
 
-    do {
-        if (occupied[index] && table[index].idend == station_idend) {
-            return table[index];
+    long i = hash;
+    while((!this->occupied[i]) && (this->table[i].idend != station_idend)) {
+        i = (i + 1) % this->mod;
+        if(i == hash) {
+            throw std::out_of_range("Objeto almejado não encontrado.");
         }
-        index = (index + 1) % mod;
-    } while (index != startIndex);
+    }
 
-    throw std::runtime_error("Addr not found");
+    return this->table[i];
+    
 }

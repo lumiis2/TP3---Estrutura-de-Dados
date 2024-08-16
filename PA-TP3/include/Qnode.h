@@ -11,7 +11,7 @@ struct Qnode {
     Box limites;   // Limites do nó
     T nw, ne, sw, se; // Índices para os filhos (noroeste, nordeste, sudoeste, sudeste)
 
-    Qnode();
+    Qnode() = default;
     
     Qnode(Box limites) 
         : limites(limites), nw(-1), ne(-1), sw(-1), se(-1) {};

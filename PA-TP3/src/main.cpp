@@ -2,7 +2,6 @@
 #include <iomanip>
 #include <fstream>
 #include <sstream>
-#include <string>
 #include "QuadTree.h"
 #include "Hash.h"
 
@@ -15,97 +14,136 @@ void process(ifstream& file, QuadTree& quadtree, Hash& hash) {
         Addr temp;
         double x, y;
         string campo;
-
-        getline(sstream, temp.idend, ';');
+ 
         getline(sstream, campo, ';');
-        temp.id_logrado = stoll(campo);
+        temp.idend = campo;
+        getline(sstream, campo, ';');
+        try {
+            temp.id_logrado = stoll(campo);
+        } catch (const exception& e) {
+            cerr << "Erro na conversão de id_logrado: " << e.what() << " | valor: " << campo << endl;
+            continue;
+        }
+
         getline(sstream, temp.sigla_tipo, ';');
         getline(sstream, temp.nome_logra, ';');
         getline(sstream, campo, ';');
-        temp.numero_imo = stoi(campo);
+        try {
+            temp.numero_imo = stoi(campo);
+        } catch (const exception& e) {
+            cerr << "Erro na conversão de numero_imo: " << e.what() << " | valor: " << campo << endl;
+            continue;
+        }
+
         getline(sstream, temp.nome_bairr, ';');
         getline(sstream, temp.nome_regio, ';');
         getline(sstream, campo, ';');
-        temp.cep = stoi(campo);
+        try {
+            temp.cep = stoi(campo);
+        } catch (const exception& e) {
+            cerr << "Erro na conversão de CEP: " << e.what() << " | valor: " << campo << endl;
+            continue;
+        }
+
         getline(sstream, campo, ';');
-        x = stod(campo);
+        try {
+            x = stod(campo);
+        } catch (const exception& e) {
+            cerr << "Erro na conversão de coordenada X: " << e.what() << " | valor: " << campo << endl;
+            continue;
+        }
+
         getline(sstream, campo, ';');
-        y = stod(campo);
+        try {
+            y = stod(campo);
+        } catch (const exception& e) {
+            cerr << "Erro na conversão de coordenada Y: " << e.what() << " | valor: " << campo << endl;
+            continue;
+        }
 
         temp.coordenadas = Point(x, y);
+        temp.ativo = true;
 
-        quadtree.insert(temp);
-        hash.insert(temp);
+        try {
+            quadtree.insert(temp);
+        } catch (const exception& e) {
+            cerr << "Erro ao inserir no QuadTree: " << e.what() << endl;
+            continue;
+        }
+
+        try {
+            hash.insert(temp);
+        } catch (const exception& e) {
+            cerr << "Erro ao inserir na HashTable: " << e.what() << endl;
+            continue;
+        }
     }
 }
 
-void consulta_proximos_pontos(QuadTree& quadtree, const string& t, double x, double y, int n) {
+void consultar(double x, double y, int n, char op, QuadTree& quadtree, Hash& hash) {
     cout << fixed << setprecision(6);
-    cout << t << ' ' << x << ' ' << y << ' ' << n << endl;
+    cout << op << ' ' << x << ' ' << y << ' ' << n << endl;
     cout << fixed << setprecision(3);
 
-    Pair* st = quadtree.KNN(Point(x, y), n);
-    for (int i = 0; i < n; i++) {
-        cout << st[i].second << " (" << st[i].first << ")" << endl;
+    Pair<double, Addr>* stations = quadtree.KNN(Point(x, y), n);
+    for(int i = 0; i < n; i++) {
+        cout << stations[i].second << " (" << stations[i].first << ")" << endl;
     }
 
-    delete[] st;
+    delete[] stations;
 }
 
-void ativar_pontos(const string& t, const string& id, QuadTree& quadtree, const Hash& hash) {
+void ativar(string id, char op, QuadTree& quadtree, Hash& hash) {
     bool flag = quadtree.activate(hash.get(id));
+
     cout << fixed << setprecision(6);
-    cout << t << ' ' << id << endl;
+    cout << op << ' ' << id << endl;
     cout << fixed << setprecision(3);
     cout << "Ponto de recarga " << id << (flag ? " já estava ativo." : " ativado.") << endl;
 }
 
-void desativar_pontos(const string& t, const string& id, QuadTree& quadtree, const Hash& hash) {
+void desativar(string id, char op, QuadTree& quadtree, Hash& hash) {
     bool flag = quadtree.inactivate(hash.get(id));
+
     cout << fixed << setprecision(6);
-    cout << t << ' ' << id << endl;
+    cout << op << ' ' << id << endl;
     cout << fixed << setprecision(3);
     cout << "Ponto de recarga " << id << (flag ? " já estava desativado." : " desativado.") << endl;
 }
 
 int main() {
-    QuadTree quadtree(Box(Point(0.0, 0.0), Point(1e6, 1e6)));
+    QuadTree quadtree(Box(Point(0.0, 0.0), Point(1e9, 1e9)));
     Hash hash;
 
-    ifstream base("geracarga.base");
-    if (!base) {
-        cerr << "Erro ao abrir o arquivo geracarga.base" << endl;
-        return 1;
-    }
+    ifstream base("data/geracarga.base");
+
     process(base, quadtree, hash);
 
-    ifstream ev("geracarga.ev");
-    if (!ev) {
-        cerr << "Erro ao abrir o arquivo geracarga.ev" << endl;
-        return 1;
-    }
+    ifstream ev("data/geracarga.ev");
 
     int n;
     ev >> n;
 
-    string comando;
-    while (ev >> comando) {
-        cout << comando << endl;
-        if (comando == "C") {
+    for(int i = 0; i <= n; i++) {
+        char op;
+        ev >> op;
+
+        if(op == 'A') {
+            string id;
+            ev >> id;
+            ativar(id, op, quadtree, hash);
+
+        } else if(op == 'D') {
+            string id;
+            ev >> id;
+            desativar(id, op, quadtree, hash);
+
+        } else if(op == 'C') {
             double x, y;
-            int tam;
-            ev >> x >> y >> tam;
-            consulta_proximos_pontos(quadtree, comando, x, y, tam);
-        } else if (comando == "A") {
-            string id;
-            ev >> id;
-            ativar_pontos(comando, id, quadtree, hash);
-        } else if (comando == "D") {
-            string id;
-            ev >> id;
-            desativar_pontos(comando, id, quadtree, hash);
-        } else {
-            cerr << "Comando desconhecido: " << comando << endl;
+            int n;
+            ev >> x >> y >> n;
+
+            consultar(x, y, n, op, quadtree, hash);
         }
     }
 

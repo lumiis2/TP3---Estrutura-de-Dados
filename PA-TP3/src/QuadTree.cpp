@@ -36,7 +36,7 @@ T QuadTree::find(Point p) {
 // Encontra o quadrante que contém o endereço
 T QuadTree::find(Addr s) {
     T quad = root;
-    while (tree[quad].nw != -1 && tree[quad].station.idend != s.idend) {
+    while (tree[quad].ne != -1 && tree[quad].station.idend != s.idend) {
         if (tree[tree[quad].ne].limites.contains(s.coordenadas))
             quad = tree[quad].ne;
         else if (tree[tree[quad].nw].limites.contains(s.coordenadas))
@@ -56,32 +56,32 @@ void QuadTree::insert(Addr s) {
 
     // Subdivide o quadrante e cria novos filhos
     tree[quad].ne = next;
-    tree[next++] = Qnode(Box(Point(s.coordenadas.x, tree[quad].limites.topLeft.y), 
-                             Point(tree[quad].limites.bottomRight.x, s.coordenadas.y))); 
+    tree[next++] = Box(Point(s.coordenadas.x, tree[quad].limites.topLeft.y), 
+                             Point(tree[quad].limites.bottomRight.x, s.coordenadas.y)); 
     
     tree[quad].nw = next;
-    tree[next++] = Qnode(Box(tree[quad].limites.topLeft, s.coordenadas)); 
+    tree[next++] = Box(tree[quad].limites.topLeft, s.coordenadas); 
     
     tree[quad].sw = next;
-    tree[next++] = Qnode(Box(Point(tree[quad].limites.topLeft.x, s.coordenadas.y), 
-                             Point(s.coordenadas.x, tree[quad].limites.bottomRight.y)));
+    tree[next++] = Box(Point(tree[quad].limites.topLeft.x, s.coordenadas.y), 
+                             Point(s.coordenadas.x, tree[quad].limites.bottomRight.y));
 
     tree[quad].se = next;
-    tree[next++] = Qnode(Box(s.coordenadas, tree[quad].limites.bottomRight)); 
+    tree[next++] = Box(s.coordenadas, tree[quad].limites.bottomRight); 
 }
 
 // Função recursiva para encontrar k vizinhos mais próximos
-void QuadTree::KNNRecursive(PriorityQueue<Pair>& pq, T quad, Point p, int k) {
+void QuadTree::KNNRecursive(PriorityQueue<Pair<double, Addr>>& pq, T quad, Point p, int k) {
     if (quad == -1) return; // Verifica se o quadrante é inválido
 
     double distance = p.euclideanDistance(tree[quad].station.coordenadas);
     
     if (tree[quad].station.ativo) {
         if (pq.size < k) {
-            pq.insert(Pair(distance, tree[quad].station));
+            pq.insert(Pair<double, Addr>(distance, tree[quad].station));
         } else if (distance < pq.top().first) {
             pq.remove();
-            pq.insert(Pair(distance, tree[quad].station));
+            pq.insert(Pair<double, Addr>(distance, tree[quad].station));
         }
     }
     
@@ -93,31 +93,31 @@ void QuadTree::KNNRecursive(PriorityQueue<Pair>& pq, T quad, Point p, int k) {
 }
  
 // Retorna os k vizinhos mais próximos
-Pair* QuadTree::KNN(Point p, int k) {
-    PriorityQueue<Pair> pq;
+Pair<double, Addr>* QuadTree::KNN(Point p, int k) {
+    PriorityQueue<Pair<double, Addr>> pq;
     KNNRecursive(pq, root, p, k);
 
-    Pair* nn = new Pair[k];
+    Pair<double, Addr>* val = new Pair<double, Addr>[k];
     int i = k - 1;
     while (!pq.empty()) {
-        nn[i--] = pq.top();
+        val[i--] = pq.top();
         pq.remove();
     }
-    return nn;
+    return val;
 }
 
 // Ativa um endereço e retorna o estado anterior
 bool QuadTree::activate(Addr s) {
     T quad = find(s);
-    bool wasActive = tree[quad].station.ativo;
+    bool was = tree[quad].station.ativo;
     tree[quad].station.ativo = true;
-    return wasActive;
+    return was;
 }
 
 // Desativa um endereço e retorna o estado anterior
 bool QuadTree::inactivate(Addr s) {
-    T quad = find(s);
-    bool wasInactive = !tree[quad].station.ativo;
-    tree[quad].station.ativo = false;
-    return wasInactive;
+    T node = find(s);
+    bool was = !tree[node].station.ativo;
+    tree[node].station.ativo = false;
+    return was;
 }

@@ -8,7 +8,7 @@
 /**
  * @brief Estrutura que representa um endereço com informações detalhadas.
  */
-struct Addr {
+struct Addr { 
     std::string idend;        ///< Identificador do endereço
     long id_logrado;          ///< ID do logradouro
     std::string sigla_tipo;   ///< Sigla do tipo de logradouro (ex: "R" para Rua)
@@ -30,18 +30,15 @@ struct Addr {
      * @return Fluxo de saída
      */
     friend std::ostream& operator<<(std::ostream& os, const Addr& s) {
-        os << s.idend << ' '
-            << s.id_logrado << ' '
-            << s.sigla_tipo << ' '
-            << s.nome_logra << ' '
-            << s.numero_imo << ' '
-            << s.nome_bairr << ' '
-            << s.nome_regio << ' '
-            << s.cep << ' '
-            << s.coordenadas.x << ' '
-            << s.coordenadas.y;
+        os  << s.sigla_tipo << " "
+            << s.nome_logra << ", "
+            << s.numero_imo << ", "
+            << s.nome_bairr << ", "
+            << s.nome_regio << ", "
+            << s.cep;
         return os;
     }
 };
 
 #endif  // ADDR_H
+
