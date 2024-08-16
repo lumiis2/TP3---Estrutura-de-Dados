@@ -1,6 +1,7 @@
 #include "QuadTree.h"
 #include <cmath>
 #include <stdexcept> // Para std::runtime_error
+#include <limits>    // Para std::numeric_limits
 
 // Construtor padrão
 QuadTree::QuadTree() : tree(new Qnode[MAX]), next(1) {
@@ -99,7 +100,7 @@ void QuadTree::insert(Addr st) {
 }
 
 // Função recursiva para encontrar k vizinhos mais próximos
-void QuadTree::KNNRecursive(PriorityQueue<Pair<double, Addr>>& pq, T node, Point p, int k) {
+void QuadTree::KNNRecursive(PriorityQueue<Pair<double, Addr>>& pq, T node, Point p, int k, double& minDistance) {
     if (node == -1) return; // Verifica se o quadrante é inválido
 
     double distance = p.euclideanDistance(tree[node].station.coordenadas); // Calcula a distância euclidiana
@@ -107,17 +108,22 @@ void QuadTree::KNNRecursive(PriorityQueue<Pair<double, Addr>>& pq, T node, Point
     if (tree[node].station.ativo) { // Verifica se o endereço está ativo
         if (pq.size < k) {
             pq.insert(Pair<double, Addr>(distance, tree[node].station)); // Adiciona no pq se não houver k elementos ainda
-        } else if (distance < pq.top().first) {
+            if(distance < minDistance) minDistance = distance;
+        } else if (distance < minDistance) {
             pq.remove(); // Remove o elemento com maior distância
             pq.insert(Pair<double, Addr>(distance, tree[node].station)); // Adiciona o novo elemento
+            minDistance = pq.top().first; // Atualiza a menor distância
         }
     }
     
-    // Recorre para os quadrantes filhos
-    KNNRecursive(pq, tree[node].ne, p, k);
-    KNNRecursive(pq, tree[node].nw, p, k);
-    KNNRecursive(pq, tree[node].sw, p, k);
-    KNNRecursive(pq, tree[node].se, p, k);
+    // Verifica a distância do retângulo ao ponto antes de buscar os quadrantes filhos
+    double distanceToRect = tree[node].limites.distanceToPoint(p);
+    if (distanceToRect < minDistance) {
+        KNNRecursive(pq, tree[node].ne, p, k, minDistance);
+        KNNRecursive(pq, tree[node].nw, p, k, minDistance);
+        KNNRecursive(pq, tree[node].sw, p, k, minDistance);
+        KNNRecursive(pq, tree[node].se, p, k, minDistance);
+    }
 }
 
 // Retorna os k vizinhos mais próximos
@@ -126,7 +132,8 @@ Pair<double, Addr>* QuadTree::KNN(Point p, int k) {
         throw std::invalid_argument("O valor de k deve ser maior que 0.");
     }
     PriorityQueue<Pair<double, Addr>> pq; // Cria uma fila de prioridade para armazenar os vizinhos mais próximos
-    KNNRecursive(pq, root, p, k); // Preenche a fila de prioridade com os k vizinhos mais próximos
+    double minDistance = std::numeric_limits<double>::max(); // Inicializa a menor distância com o valor máximo possível
+    KNNRecursive(pq, root, p, k, minDistance); // Preenche a fila de prioridade com os k vizinhos mais próximos
 
     Pair<double, Addr>* val = new Pair<double, Addr>[k]; // Aloca memória para os k vizinhos
     int i = k - 1;

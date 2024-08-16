@@ -30,7 +30,7 @@ private:
     const T root = 0;         ///< Índice da raiz da quadtree no vetor
     T next;                   ///< Próximo índice disponível no vetor
 
-    void KNNRecursive(PriorityQueue<Pair<double, Addr>>& pq, T quad, Point p, int k);
+    void KNNRecursive(PriorityQueue<Pair<double, Addr>>& pq, T quad, Point p, int k, double& minDistance);
     T find(Point p);          ///< Encontra o nó que contém um ponto
     T find(Addr s);           ///< Encontra o nó que contém um endereço
 };
