@@ -1,0 +1,49 @@
+=======	||=======================================================||
+	|| Atencao: enderecobh.csv deve estar no diretorio raiz  ||
+	|| 	    talvez python3 nao funcione entao use python ||
+=======	||=======================================================||
+
+DPPC -  Distribuicao por palavra chave:
+	Escolha um numero de palavras chave (regiões ou ruas por exemplo)
+	Insira as palavras chave em seguida
+	
+Exemplo:
+	python3 DPPC.py 3 "AUGUSTO DE LIMA" "Padre Eustáquio" "GUAICURUS"
+
+Retorno:
+	Arquivo .base com todos os enderecos que contem palavras chave (util para testar densidade em regioes ou regioes dispersas)
+
+======================================================================================================================================
+
+GERAMAPA - A partir de um arquivo .base gera o mapa dele
+	   sera necessario matplotlib: pip3 install matplotlib
+	   opcional: escolher nome da imagem
+		     -name gera imagem com nome dos bairros
+Exemplo:
+	python3 GERAMAPA.py geracarga.base -name
+	python3 GERAMAPA.py 'geracarga(3).base' imagem.png
+
+Retorno:
+	Imagem das coordenadas a partir de um arquivo no formato .base
+======================================================================================================================================
+
+EVDENSITY - Densidade de Eventos:
+	    Escolha um numero de comandos totais
+	    Escolha uma densidade desses comandos
+	    Escolha se o comando que voce quer a densidade e C ou AD
+
+Exemplo:
+	python3 EVDENSITY.py 50 geracarga.base 0.4 -C 
+
+Retorno:
+	Arquivo .ev com o numero de comandos escolhidos com densidade relativa e algumas informacoes
+======================================================================================================================================
+
+EVDENSITY/ITERATOR.PY - Cria varios casos de teste de uma so vez organizados um pasta eba !!!
+
+Exemplo:
+	python3 ITERATOR.py geracarga.base 10000 0.4 -C
+
+Retorno:
+	Diretorio com diversos arquivos .ev baseados em um .base
+======================================================================================================================================

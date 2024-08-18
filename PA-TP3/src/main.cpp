@@ -2,16 +2,23 @@
 #include <iomanip>
 #include <fstream>
 #include <sstream>
+#include <cstring>
+#include <chrono> // Para medição de tempo
 #include "QuadTree.h"
 #include "Hash.h"
 
 using namespace std;
+using namespace std::chrono;
+
 
 // Função para processar o arquivo de entrada e inserir dados no QuadTree e na HashTable
-void process(ifstream& file, QuadTree& quadtree, Hash& hash) {
+void process(ifstream& file, QuadTree& quadtree, Hash& hash, int tam) {
+    auto start = high_resolution_clock::now(); // Início da medição de tempo
     string linha;
+    
     // Lê o arquivo linha por linha
-    while (getline(file, linha)) {
+    for (int i = 0; i < tam; i++) {
+        getline(file, linha);
         istringstream sstream(linha);
         Addr temp; // Estrutura para armazenar os dados de um endereço
         double x, y; // Coordenadas
@@ -92,10 +99,16 @@ void process(ifstream& file, QuadTree& quadtree, Hash& hash) {
             continue; // Pular para a próxima linha em caso de erro
         }
     }
+    auto end = high_resolution_clock::now(); // Fim da medição de tempo
+    auto duration = duration_cast<microseconds>(end - start); // Usar microsegundos para maior precisão
+    cout << fixed << setprecision(6); // Definir precisão para 6 casas decimais
+    cout << "Tempo de processamento: " << duration.count() / 1e6 << " s" << endl; // Converter microsegundos para segundos
 }
 
 // Função para consultar os pontos mais próximos de uma coordenada
 void consultar(double x, double y, int n, char op, QuadTree& quadtree, Hash& hash) {
+    auto start = high_resolution_clock::now(); // Início da medição de tempo
+
     cout << fixed << setprecision(6);
     cout << op << ' ' << x << ' ' << y << ' ' << n << endl;
     cout << fixed << setprecision(3);
@@ -107,11 +120,19 @@ void consultar(double x, double y, int n, char op, QuadTree& quadtree, Hash& has
         cout << stations[i].second << " (" << stations[i].first << ")" << endl;
     }
 
-    delete[] stations; // Libera a memória alocada para os pontos
+    delete[] stations; 
+    // Libera a memória alocada para os pontos
+    auto end = high_resolution_clock::now(); // Fim da medição de tempo
+    auto duration = duration_cast<microseconds>(end - start); // Usar microsegundos para maior precisão
+    cout << fixed << setprecision(6); // Definir precisão para 6 casas decimais
+    cout << "Tempo de consulta: " << duration.count() / 1e6 << " s" << endl; // Converter microsegundos para segundos
+
 }
 
 // Função para ativar um ponto de recarga
 void ativar(string id, char op, QuadTree& quadtree, Hash& hash) {
+    auto start = high_resolution_clock::now(); // Início da medição de tempo
+
     bool flag = quadtree.activate(hash.get(id)); // Ativa o ponto de recarga
 
     cout << fixed << setprecision(6);
@@ -119,6 +140,11 @@ void ativar(string id, char op, QuadTree& quadtree, Hash& hash) {
     cout << fixed << setprecision(3);
     // Imprime mensagem sobre o status da ativação
     cout << "Ponto de recarga " << id << (flag ? " já estava ativo." : " ativado.") << endl;
+
+    auto end = high_resolution_clock::now(); // Fim da medição de tempo
+    auto duration = duration_cast<microseconds>(end - start); // Usar microsegundos para maior precisão
+    cout << fixed << setprecision(6); // Definir precisão para 6 casas decimais
+    cout << "Tempo de ativação: " << duration.count() / 1e6 << " s" << endl; // Converter microsegundos para segundos
 }
 
 // Função para desativar um ponto de recarga
@@ -133,28 +159,40 @@ void desativar(string id, char op, QuadTree& quadtree, Hash& hash) {
 }
 
 // Função principal
-int main() {
+int main(int argc, char *argv[]) {
+    char basefile[100], evfile[100]; 
+
+    if(argc < 5){
+        strcpy(basefile, "geracarga.base");
+        strcpy(evfile, "geracarga.ev");
+    }
+    else{
+        strcpy(basefile, argv[2]);
+        strcpy(evfile, argv[4]);
+    }
     // Cria instâncias do QuadTree e da HashTable
     QuadTree quadtree(Box(Point(0.0, 0.0), Point(1e9, 1e9)));
     Hash hash;
 
     // Abre o arquivo base para leitura
-    ifstream base("data/geracarga.base");
+    ifstream base(basefile);
 
     // Processa o arquivo base
-    process(base, quadtree, hash);
+    int tam;
+    base >> tam;
+    base.ignore('\n');
+    process(base, quadtree, hash, tam);
 
     // Abre o arquivo de eventos para leitura
-    ifstream ev("data/geracarga.ev");
+    ifstream ev(evfile);
 
     int n;
     ev >> n; // Lê o número de operações
 
     // Executa cada operação
-    for(int i = 0; i <= n; i++) {
-        char op;
-        ev >> op;
-
+    char op;
+    while(ev >> op) {
+        
         if(op == 'A') {
             string id;
             ev >> id;

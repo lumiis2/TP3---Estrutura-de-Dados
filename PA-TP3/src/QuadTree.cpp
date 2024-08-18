@@ -108,7 +108,7 @@ void QuadTree::KNNRecursive(PriorityQueue<Pair<double, Addr>>& pq, T node, Point
     if (tree[node].station.ativo) { // Verifica se o endereço está ativo
         if (pq.size < k) {
             pq.insert(Pair<double, Addr>(distance, tree[node].station)); // Adiciona no pq se não houver k elementos ainda
-            if(distance < minDistance) minDistance = distance;
+            // if(distance < minDistance) minDistance = distance;
         } else if (distance < minDistance) {
             pq.remove(); // Remove o elemento com maior distância
             pq.insert(Pair<double, Addr>(distance, tree[node].station)); // Adiciona o novo elemento
