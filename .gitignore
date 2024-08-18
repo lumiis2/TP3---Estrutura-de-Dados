@@ -5,3 +5,7 @@
 TP-REF/
 
 .vscode/
+
+*.txt
+
+*.csv
