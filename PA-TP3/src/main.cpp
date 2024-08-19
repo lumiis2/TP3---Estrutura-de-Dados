@@ -12,13 +12,13 @@ using namespace std::chrono;
 
 
 // Função para processar o arquivo de entrada e inserir dados no QuadTree e na HashTable
-void process(ifstream& file, QuadTree& quadtree, Hash& hash, int tam) {
+void process(istream& input, QuadTree& quadtree, Hash& hash, int tam) {
     auto start = high_resolution_clock::now(); // Início da medição de tempo
     string linha;
     
     // Lê o arquivo linha por linha
     for (int i = 0; i < tam; i++) {
-        getline(file, linha);
+        getline(input, linha);
         istringstream sstream(linha);
         Addr temp; // Estrutura para armazenar os dados de um endereço
         double x, y; // Coordenadas
@@ -102,30 +102,30 @@ void process(ifstream& file, QuadTree& quadtree, Hash& hash, int tam) {
     auto end = high_resolution_clock::now(); // Fim da medição de tempo
     auto duration = duration_cast<microseconds>(end - start); // Usar microsegundos para maior precisão
     cout << fixed << setprecision(6); // Definir precisão para 6 casas decimais
-    cout << "Tempo de processamento: " << duration.count() / 1e6 << " s" << endl; // Converter microsegundos para segundos
+    cout << "\nTempo de processamento: " << duration.count() / 1e6 << " s" << endl; // Converter microsegundos para segundos
 }
 
 // Função para consultar os pontos mais próximos de uma coordenada
 void consultar(double x, double y, int n, char op, QuadTree& quadtree, Hash& hash) {
     auto start = high_resolution_clock::now(); // Início da medição de tempo
 
-    cout << fixed << setprecision(6);
-    cout << op << ' ' << x << ' ' << y << ' ' << n << endl;
-    cout << fixed << setprecision(3);
+    // cout << fixed << setprecision(6);
+    // cout << op << ' ' << x << ' ' << y << ' ' << n << endl;
+    // cout << fixed << setprecision(3);
 
     // Obtém os n pontos mais próximos da coordenada (x, y) do QuadTree
     Pair<double, Addr>* stations = quadtree.KNN(Point(x, y), n);
     // Imprime cada ponto encontrado com a distância
-    for(int i = 0; i < n; i++) {
-        cout << stations[i].second << " (" << stations[i].first << ")" << endl;
-    }
+    // for(int i = 0; i < n; i++) {
+    //     cout << stations[i].second << " (" << stations[i].first << ")" << endl;
+    // }
 
     delete[] stations; 
     // Libera a memória alocada para os pontos
     auto end = high_resolution_clock::now(); // Fim da medição de tempo
     auto duration = duration_cast<microseconds>(end - start); // Usar microsegundos para maior precisão
     cout << fixed << setprecision(6); // Definir precisão para 6 casas decimais
-    cout << "Tempo de consulta: " << duration.count() / 1e6 << " s" << endl; // Converter microsegundos para segundos
+    cout << "\nTempo de consulta: " << duration.count() / 1e6 << " s" << endl; // Converter microsegundos para segundos
 
 }
 
@@ -135,81 +135,84 @@ void ativar(string id, char op, QuadTree& quadtree, Hash& hash) {
 
     bool flag = quadtree.activate(hash.get(id)); // Ativa o ponto de recarga
 
-    cout << fixed << setprecision(6);
-    cout << op << ' ' << id << endl;
-    cout << fixed << setprecision(3);
+    // cout << fixed << setprecision(6);
+    // cout << op << ' ' << id << endl;
+    // cout << fixed << setprecision(3);
     // Imprime mensagem sobre o status da ativação
-    cout << "Ponto de recarga " << id << (flag ? " já estava ativo." : " ativado.") << endl;
+    // cout << "Ponto de recarga " << id << (flag ? " já estava ativo." : " ativado.") << endl;
 
     auto end = high_resolution_clock::now(); // Fim da medição de tempo
     auto duration = duration_cast<microseconds>(end - start); // Usar microsegundos para maior precisão
     cout << fixed << setprecision(6); // Definir precisão para 6 casas decimais
-    cout << "Tempo de ativação: " << duration.count() / 1e6 << " s" << endl; // Converter microsegundos para segundos
+    cout << "\nTempo de ativação: " << duration.count() / 1e6 << " s" << endl; // Converter microsegundos para segundos
 }
 
 // Função para desativar um ponto de recarga
 void desativar(string id, char op, QuadTree& quadtree, Hash& hash) {
+    auto start = high_resolution_clock::now(); // Início da medição de tempo
     bool flag = quadtree.inactivate(hash.get(id)); // Desativa o ponto de recarga
 
-    cout << fixed << setprecision(6);
-    cout << op << ' ' << id << endl;
-    cout << fixed << setprecision(3);
+    // cout << fixed << setprecision(6);
+    // cout << op << ' ' << id << endl;
+    // cout << fixed << setprecision(3);
     // Imprime mensagem sobre o status da desativação
-    cout << "Ponto de recarga " << id << (flag ? " desativado." : " já estava desativado.") << endl;
+    // cout << "Ponto de recarga " << id << (flag ? " desativado." : " já estava desativado.") << endl;
+    auto end = high_resolution_clock::now(); // Fim da medição de tempo
+    auto duration = duration_cast<microseconds>(end - start); // Usar microsegundos para maior precisão
+    cout << fixed << setprecision(6); // Definir precisão para 6 casas decimais
+    cout << "\nTempo de desativação: " << duration.count() / 1e6 << " s" << endl; // Converter microsegundos para segundos
+}
+
+
+// Função para processar as consultas do arquivo .ev
+void processQueries(istream& input, QuadTree& quadtree, Hash& hash, int tam) {
+    string linha;
+    
+    // Lê o arquivo linha por linha
+    for (int i = 0; i < tam; i++) {
+        getline(input, linha);
+        istringstream sstream(linha);
+        char op;
+        sstream >> op;
+        
+        if (op == 'C') {
+            double x, y;
+            int n;
+            sstream >> x >> y >> n;
+            consultar(x, y, n, op, quadtree, hash);
+        } else if (op == 'A') {
+            string id;
+            sstream >> id;
+            ativar(id, op, quadtree, hash);
+        } else if (op == 'D') {
+            string id;
+            sstream >> id;
+            desativar(id, op, quadtree, hash);
+        } else if(""){
+            break;
+        } else {
+            cerr << "Operação inválida: " << op << endl;
+        }
+    }
 }
 
 // Função principal
 int main(int argc, char *argv[]) {
-    char basefile[100], evfile[100]; 
-
-    if(argc < 5){
-        strcpy(basefile, "geracarga.base");
-        strcpy(evfile, "geracarga.ev");
-    }
-    else{
-        strcpy(basefile, argv[2]);
-        strcpy(evfile, argv[4]);
-    }
-    // Cria instâncias do QuadTree e da HashTable
+    // ler da entrada padrao
     QuadTree quadtree(Box(Point(0.0, 0.0), Point(1e9, 1e9)));
     Hash hash;
 
-    // Abre o arquivo base para leitura
-    ifstream base(basefile);
 
     // Processa o arquivo base
     int tam;
-    base >> tam;
-    base.ignore('\n');
-    process(base, quadtree, hash, tam);
+    cin >> tam;
+    cin.ignore();
+    process(cin, quadtree, hash, tam);
 
-    // Abre o arquivo de eventos para leitura
-    ifstream ev(evfile);
-
-    int n;
-    ev >> n; // Lê o número de operações
-
-    // Executa cada operação
-    char op;
-    while(ev >> op) {
-        
-        if(op == 'A') {
-            string id;
-            ev >> id;
-            ativar(id, op, quadtree, hash);
-
-        } else if(op == 'D') {
-            string id;
-            ev >> id;
-            desativar(id, op, quadtree, hash);
-
-        } else if(op == 'C') {
-            double x, y;
-            int n;
-            ev >> x >> y >> n;
-            consultar(x, y, n, op, quadtree, hash);
-        }
-    }
+    int t;
+    cin >> t;
+    cin.ignore();
+    processQueries(cin, quadtree, hash, t);
 
     return 0;
 }

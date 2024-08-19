@@ -12,7 +12,7 @@ def generate_commands(num_commands, data, percentage, command_type):
     num_specific = int(num_commands * percentage)
     num_remaining = num_commands - num_specific
     
-    commands = []
+    commands = [] 
 
     if command_type == '-A':
         for _ in range(num_specific):
